@@ -1,69 +1,70 @@
-import { databases , users} from "@/models/server/config";
+import { databases, users } from "@/models/server/config";
 import { answerCollection, db } from "@/models/name";
-import {NextRequest , NextResponse} from "next/server";
-import {UserPrefs} from "@/store/Auth"
+import { NextRequest, NextResponse } from "next/server";
+import { UserPrefs } from "@/store/Auth";
+import { ID } from "node-appwrite"; // Added the missing ID import
 
-
-export async function POST(request : NextRequest) {
+export async function POST(request: NextRequest) {
     try {
-        const {questionId, answer, authorId} = await request.json();
-        const repsonse = await databases.createDocument(db,
-            answerCollection, ID.unique(),{
+        const { questionId, answer, authorId } = await request.json();
+        
+        // Fixed the spelling of 'response'
+        const response = await databases.createDocument(
+            db,
+            answerCollection,
+            ID.unique(),
+            {
                 content: answer,
                 authorId: authorId,
-                questionId:questionId
-            })
+                questionId: questionId,
+            }
+        );
 
-            //increase author reputation
-           const prefs = await users.getPrefs<UserPrefs>(authorId)
-           await users.updatePrefs<UserPrefs>(authorId, {
-                reputation: Number(prefs.reputation) + 1,
-            })
+        // Increase author reputation
+        const prefs = await users.getPrefs<UserPrefs>(authorId);
+        await users.updatePrefs<UserPrefs>(authorId, {
+            reputation: Number(prefs.reputation) + 1,
+        });
 
-            return NextResponse.json(response, {
-                status:201
-            })
-
-
-
-    } catch (error:any) {
-            return NextResponse.json(
-
-                {
-                    error: error?.message || "Error creating answer"
-                },
-                {
-                    status: error?.status || error?.code || 500
-                }
-            )    
+        return NextResponse.json(response, {
+            status: 201,
+        });
+    } catch (error: any) {
+        return NextResponse.json(
+            {
+                error: error?.message || "Error creating answer",
+            },
+            {
+                status: error?.status || error?.code || 500,
+            }
+        );
     }
 }
 
-export async function DELETE(request : NextRequest){
+export async function DELETE(request: NextRequest) {
     try {
-        const {answertId} = await request.json()
-        const answer = await databases.getDocument(db, answerCollection, answertId)
-        const response = await databases.deleteDocument(db , answerCollection, answertId)
+        // Fixed the spelling of 'answerId'
+        const { answerId } = await request.json();
+        const answer = await databases.getDocument(db, answerCollection, answerId);
+        const response = await databases.deleteDocument(db, answerCollection, answerId);
 
-        const prefs =await users.getPrefs<UserPrefs>(answer.authorId);
+        const prefs = await users.getPrefs<UserPrefs>(answer.authorId);
         await users.updatePrefs(answer.authorId, {
-            reputation:Number(prefs.reputation) - 1
-        })
+            reputation: Number(prefs.reputation) - 1,
+        });
 
         return NextResponse.json(
-            {data: response},
-            {status:200}
-        )
-
-    } catch (error:any) {
+            { data: response },
+            { status: 200 }
+        );
+    } catch (error: any) {
         return NextResponse.json(
             {
-                message: error?.message || "Error deleting the answer"
-
+                message: error?.message || "Error deleting the answer",
             },
             {
-                status: error?.status  || error?.code || 500
+                status: error?.status || error?.code || 500,
             }
-        )
+        );
     }
 }

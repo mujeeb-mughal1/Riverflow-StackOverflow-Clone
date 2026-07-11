@@ -16,10 +16,9 @@ export const FloatingNav = ({
     }[];
     className?: string;
 }) => {
+    // 1. ALL HOOKS GO HERE AT THE TOP
     const { scrollYProgress, scrollY } = useScroll();
-
-    const { session, logout } = useAuthStore();
-
+    const { session, logout, hydrated } = useAuthStore();
     const [visible, setVisible] = useState(true);
 
     useMotionValueEvent(scrollYProgress, "change", current => {
@@ -43,6 +42,10 @@ export const FloatingNav = ({
         }
     });
 
+    // 2. EARLY RETURNS GO HERE, AFTER ALL HOOKS ARE DONE
+    if (!hydrated) return null;
+
+    // 3. MAIN RENDER GOES LAST
     return (
         <AnimatePresence mode="wait">
             <motion.div

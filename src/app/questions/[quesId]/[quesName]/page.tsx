@@ -1,7 +1,7 @@
-import Answers from "@/components/Answers";
-import Comments from "@/components/Comments";
+import Answers from "@/components/Answers"; // Fixed plural import
+import Comments from "@/components/Comment";
 import { MarkdownPreview } from "@/components/RTE";
-import VoteButtons from "@/components/VoteButtons";
+import VoteButtons from "@/components/VoteButton";
 import Particles from "@/components/magicui/particles";
 import ShimmerButton from "@/components/magicui/shimmer-button";
 import { avatars } from "@/models/client/config";
@@ -168,18 +168,23 @@ const Page = async ({ params }: { params: { quesId: string; quesName: string } }
                     </div>
                     <div className="w-full overflow-auto">
                         <MarkdownPreview className="rounded-xl p-4" source={question.content} />
-                        <picture>
-                            <img
-                                src={
-                                    storage.getFilePreview(
-                                        questionAttachmentBucket,
-                                        question.attachmentId
-                                    ).href
-                                }
-                                alt={question.title}
-                                className="mt-3 rounded-lg"
-                            />
-                        </picture>
+                        
+                        {/* Fixed conditionally rendering the image so it doesn't crash on text-only posts */}
+                        {question.attachmentId && (
+                            <picture>
+                                <img
+                                    src={
+                                        storage.getFilePreview(
+                                            questionAttachmentBucket,
+                                            question.attachmentId
+                                        ).href
+                                    }
+                                    alt={question.title}
+                                    className="mt-3 rounded-lg"
+                                />
+                            </picture>
+                        )}
+                        
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
                             {question.tags.map((tag: string) => (
                                 <Link

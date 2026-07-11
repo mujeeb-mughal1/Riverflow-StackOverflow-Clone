@@ -2,12 +2,12 @@
 
 import { ID, Models } from "appwrite";
 import React from "react";
-import VoteButtons from "./VoteButtons";
+import VoteButtons from "./VoteButton";
 import { useAuthStore } from "@/store/Auth";
 import { avatars, databases } from "@/models/client/config";
 import { answerCollection, db } from "@/models/name";
 import RTE, { MarkdownPreview } from "./RTE";
-import Comments from "./Comments";
+import Comments from "./Comment";
 import slugify from "@/utils/slugify";
 import Link from "next/link";
 import { IconTrash } from "@tabler/icons-react";

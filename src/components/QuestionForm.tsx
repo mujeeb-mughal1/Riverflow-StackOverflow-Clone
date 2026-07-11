@@ -197,6 +197,7 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
                 <RTE
                     value={formData.content}
                     onChange={value => setFormData(prev => ({ ...prev, content: value || "" }))}
+                    height={300}
                 />
             </LabelInputContainer>
             <LabelInputContainer>

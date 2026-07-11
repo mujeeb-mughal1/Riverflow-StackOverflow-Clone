@@ -1,7 +1,13 @@
-"use client"
+"use client";
 
-import React from "react";
-import {useAuthStore} from "@/store/Auth";
+import React, { useEffect, useState } from "react";
+import { useAuthStore } from "@/store/Auth";
+import Link from "next/link";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { IconBrandGithub, IconBrandGoogle, IconEye, IconEyeOff } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 
 const BottomGradient = () => {
     return (
@@ -22,70 +28,102 @@ const LabelInputContainer = ({
     return <div className={cn("flex w-full flex-col space-y-2", className)}>{children}</div>;
 };
 
-export default function RegisterPage(){
+export default function RegisterPage() {
+    // 1. Pull 'session' from the store to check if they are already logged in
+    const { createAccount, login, session } = useAuthStore();
+    const router = useRouter();
 
-    const {createAccount, login}  =useAuthStore();
-    const [isLoading, setIsLoading] = React.useState(false)
-    const [error, setError] = React.useState("")
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
-    const handleSubmit = async(e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        
-        //collect data
-        const formData = new FormData(e.currentTarget)
-        const firstName = formData.get("firstname")
-        const lastName = formData.get("lastname")
-        const email = formData.get("email")
-        const password = formData.get("password")
+    // LAYER 1: The Route Guard
+    // If the user visits this page but already has an active session, redirect immediately.
+    useEffect(() => {
+        if (session) {
+            router.push("/");
+        }
+    }, [session, router]);
 
-        //validate data
-        if(!firstName || !lastName || !email || !password){
-            setError(()=> "Please fill out all the fields")
-            return
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        // Collect data
+        const formData = new FormData(e.currentTarget);
+        const firstName = formData.get("firstname");
+        const lastName = formData.get("lastname");
+        const email = formData.get("email");
+        const password = formData.get("password");
+
+        // Validate data
+        if (!firstName || !lastName || !email || !password) {
+            setError("Please fill out all fields to continue.");
+            return;
         }
 
-        //call the store
-        setIsLoading(true)
-        setError("")
+        setIsLoading(true);
+        setError("");
 
-        const response = await createAccount(
-            `${firstName} ${lastName}`,
-            email?.toString(),
-            password?.toString()
-        )
+        try {
+            const response = await createAccount(
+                `${firstName} ${lastName}`,
+                email?.toString(),
+                password?.toString()
+            );
 
-        if(response.error){
-            setError(()=> response.error!.message)
-        }else{
-            await login(email.toString(), password.toString())
+            if (response?.error) {
+                let msg = response.error.message;
+                if (msg.includes("already exists")) msg = "An account with this email already exists. Please log in.";
+                if (msg.includes("session is active")) {
+                    msg = "You are already logged in! Taking you to the homepage...";
+                    setTimeout(() => router.push("/"), 1500);
+                }
+                setError(msg);
+            } else {
+                // Account created! Now try to log them in manually.
+                const loginResponse = await login(email.toString(), password.toString());
+
+                if (loginResponse?.error) {
+                    // Did it fail because createAccount already logged them in?
+                    if (loginResponse.error.message.includes("session is active")) {
+                        // They are logged in! Send them to the feed.
+                        router.push("/");
+                    } else {
+                        // A real error happened, display exactly what Appwrite says
+                        setError(loginResponse.error.message || "Account created, but we couldn't log you in automatically.");
+                    }
+                } else {
+                    // SUCCESS! Send to homepage
+                    router.push("/");
+                }
+            }
+        } catch (err: any) {
+            let msg = err.message || "An unexpected error occurred. Please try again.";
+            
+            if (msg.includes("already exists")) {
+                msg = "An account with this email already exists. Please log in instead.";
+            } else if (msg.includes("session is active")) {
+                msg = "You are already logged in! Taking you to the homepage...";
+                setTimeout(() => router.push("/"), 1500);
+            }
+            
+            setError(msg);
+        } finally {
+            setIsLoading(false);
         }
-        if(loginResponse.error){
-            setError(()=>loginResponse.error!.message)
-        }
-
-        setIsLoading(()=>false)
+    };
+    // Prevent the form from flashing on the screen if the user is already logged in
+    if (session) {
+        return null; 
     }
 
-
-    return(
-        <div>
-            {error && (
-                <p>{error}</p>
-            )}
-            <form onSubmit={handleSubmit}>
-
-            </form>
-        </div>
-    )
-}
-
-   return (
+    return (
         <div className="mx-auto w-full max-w-md rounded-none border border-solid border-white/30 bg-white p-4 shadow-input dark:bg-black md:rounded-2xl md:p-8">
             <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
                 Welcome to Riverflow
             </h2>
             <p className="mt-2 max-w-sm text-sm text-neutral-600 dark:text-neutral-300">
-                Signup with riverflow if you you don&apos;t have an account.
+                Signup with riverflow if you don&apos;t have an account.
                 <br /> If you already have an account,{" "}
                 <Link href="/login" className="text-orange-500 hover:underline">
                     login
@@ -94,8 +132,9 @@ export default function RegisterPage(){
             </p>
 
             {error && (
-                <p className="mt-8 text-center text-sm text-red-500 dark:text-red-400">{error}</p>
+                <p className="mt-8 text-center text-sm font-medium text-red-500 dark:text-red-400">{error}</p>
             )}
+            
             <form className="my-8" onSubmit={handleSubmit}>
                 <div className="mb-4 flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
                     <LabelInputContainer>
@@ -104,22 +143,38 @@ export default function RegisterPage(){
                     </LabelInputContainer>
                     <LabelInputContainer>
                         <Label htmlFor="lastname">Last name</Label>
-                        <Input className="text-black"  id="lastname" name="lastname" placeholder="Durden" type="text" />
+                        <Input className="text-black" id="lastname" name="lastname" placeholder="Durden" type="text" />
                     </LabelInputContainer>
                 </div>
                 <LabelInputContainer className="mb-4">
                     <Label htmlFor="email">Email Address</Label>
                     <Input
-                    className="text-black" 
+                        className="text-black"
                         id="email"
                         name="email"
                         placeholder="projectmayhem@fc.com"
                         type="email"
                     />
                 </LabelInputContainer>
+
                 <LabelInputContainer className="mb-4">
                     <Label htmlFor="password">Password</Label>
-                    <Input className="text-black"  id="password" name="password" placeholder="••••••••" type="password" />
+                    <div className="relative">
+                        <Input
+                            className="text-black w-full pr-10"
+                            id="password"
+                            name="password"
+                            placeholder="••••••••"
+                            type={showPassword ? "text" : "password"}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                        >
+                            {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
+                        </button>
+                    </div>
                 </LabelInputContainer>
 
                 <button

@@ -17,9 +17,13 @@ export default function RootLayout({
   return (
     <html 
       lang="en" 
-      className={`${inter.className} h-full antialiased`}
+      // 1. Added "dark" right here inside the backticks!
+      className={`${inter.className} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      {/* 2. Added dark:bg-black so the whole background changes */}
+      <body className="min-h-full flex flex-col dark:bg-black dark:text-white">
+        {children}
+      </body>
     </html>
   );
 }

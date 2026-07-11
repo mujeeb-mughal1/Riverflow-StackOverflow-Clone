@@ -41,7 +41,8 @@ const slugs = [
 ];
 
 const HeroSectionHeader = () => {
-    const { session } = useAuthStore();
+    const { session, hydrated } = useAuthStore();
+    if (!hydrated) return null;
 
     return (
         <div className="container mx-auto px-4">
