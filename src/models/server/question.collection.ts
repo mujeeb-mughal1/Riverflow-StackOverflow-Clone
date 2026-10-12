@@ -1,7 +1,7 @@
 import { Permission } from "node-appwrite"; 
 import { db, questionCollection } from "../name";
 import { databases } from "./config";
-
+import { IndexType } from "node-appwrite";
 export default async function createQuestionCollection() {
     //create collection
     await databases.createCollection(db, questionCollection, questionCollection, [
@@ -24,10 +24,11 @@ export default async function createQuestionCollection() {
     console.log("question Attributes created ");
 
     //create Indexes
+   
     await Promise.all([
-        databases.createIndex(db, questionCollection, "title", "fulltext", ["title"]),
-        databases.createIndex(db, questionCollection, "content", "fulltext", ["content"]),
-  ])
+        databases.createIndex(db, questionCollection, "title", IndexType.Fulltext, ["title"]),
+        databases.createIndex(db, questionCollection, "content", IndexType.Fulltext, ["content"]),
+    ]);
       console.log("question Indexes created ");
 
 }
